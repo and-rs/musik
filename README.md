@@ -38,7 +38,7 @@ At the `tidal>` prompt, try:
 d1 $ sound "bd sn"
 ```
 
-Type `hush` to stop the patterns. Press **Ctrl+C** in the SuperDirt terminal to stop the audio server.
+Type `hush` to stop the patterns. Run `just stop` to stop all SuperCollider processes and Tidal REPLs using `BootTidal.hs` on this Mac.
 
 ## What Nix manages
 

@@ -83,7 +83,12 @@
             name = "superdirt";
             runtimeInputs = [ supercolliderTools ];
             text = ''
-              exec sclang -D "${./superdirt.scd}" "$@"
+              script="$PWD/superdirt.scd"
+              if [[ ! -f "$script" ]]; then
+                echo "Run superdirt from the project directory containing superdirt.scd." >&2
+                exit 1
+              fi
+              exec sclang -D "$script" "$@"
             '';
           };
         in
