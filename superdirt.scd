@@ -13,4 +13,12 @@ s.reboot {
         ~dirt.start(57120, 0 ! 12);
     };
 };
+
+SynthDef(\mykick, {
+   |out, sustain=0.35, freq=55, pan=0|
+   var env = EnvGen.ar(Env.perc(0.001, sustain, curve: -5), doneAction: 2);
+   var pitch = XLine.kr(freq * 8, freq, 0.06);
+   var sig = SinOsc.ar(pitch) * env;
+   OffsetOut.ar(out, DirtPan.ar(sig, ~dirt.numChannels, pan, 1));
+}).add;
 )
