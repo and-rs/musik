@@ -5,7 +5,7 @@
 
   outputs = { nixpkgs, ... }:
     let
-      systems = [ "aarch64-darwin" ];
+      systems = [ "aarch64-darwin" "x86_64-linux" "aarch64-linux" ];
       forAllSystems = nixpkgs.lib.genAttrs systems;
 
       perSystem = system:
@@ -13,24 +13,28 @@
           pkgs = import nixpkgs { inherit system; };
           scVersion = "3.14.1";
 
-          supercolliderApp = pkgs.stdenvNoCC.mkDerivation {
-            pname = "supercollider-macos-app";
-            version = scVersion;
-            src = pkgs.fetchurl {
-              name = "SuperCollider-${scVersion}-macOS-universal.dmg";
-              url = "https://github.com/supercollider/supercollider/releases/download/Version-${scVersion}/SuperCollider-${scVersion}-macOS-universal.dmg";
-              hash = "sha256-7SZLMnUtJ/yG5QbdCn6zbefBnrznPD/fLtVRT4xz8C4=";
-            };
-            nativeBuildInputs = [ pkgs.undmg ];
-            sourceRoot = "SuperCollider.app";
-            dontStrip = true;
-            dontFixup = true;
+          supercolliderApp =
+            if pkgs.stdenv.hostPlatform.isDarwin then
+              pkgs.stdenvNoCC.mkDerivation {
+                pname = "supercollider-macos-app";
+                version = scVersion;
+                src = pkgs.fetchurl {
+                  name = "SuperCollider-${scVersion}-macOS-universal.dmg";
+                  url = "https://github.com/supercollider/supercollider/releases/download/Version-${scVersion}/SuperCollider-${scVersion}-macOS-universal.dmg";
+                  hash = "sha256-7SZLMnUtJ/yG5QbdCn6zbefBnrznPD/fLtVRT4xz8C4=";
+                };
+                nativeBuildInputs = [ pkgs.undmg ];
+                sourceRoot = "SuperCollider.app";
+                dontStrip = true;
+                dontFixup = true;
 
-            installPhase = ''
-              mkdir -p "$out/Applications"
-              cp -R . "$out/Applications/SuperCollider.app"
-            '';
-          };
+                installPhase = ''
+                  mkdir -p "$out/Applications"
+                  cp -R . "$out/Applications/SuperCollider.app"
+                '';
+              }
+            else
+              null;
 
           sclang = pkgs.writeShellApplication {
             name = "sclang";
@@ -53,10 +57,14 @@
             '';
           };
 
-          supercolliderTools = pkgs.symlinkJoin {
-            name = "supercollider-tools";
-            paths = [ sclang scsynth scide ];
-          };
+          supercolliderTools =
+            if pkgs.stdenv.hostPlatform.isLinux then
+              pkgs.supercollider
+            else
+              pkgs.symlinkJoin {
+                name = "supercollider-tools";
+                paths = [ sclang scsynth scide ];
+              };
 
           tidalGhc = pkgs.haskellPackages.ghcWithPackages (haskellPackages: [
             haskellPackages.tidal
@@ -108,12 +116,15 @@
       });
 
       packages = forAllSystems (system:
-        let env = perSystem system;
+        let
+          env = perSystem system;
+          pkgs = import nixpkgs { inherit system; };
         in {
-          supercollider-app = env.supercolliderApp;
           supercollider-tools = env.supercolliderTools;
           tidal = env.tidal;
           default = env.supercolliderTools;
+        } // nixpkgs.lib.optionalAttrs pkgs.stdenv.hostPlatform.isDarwin {
+          supercollider-app = env.supercolliderApp;
         });
     };
 }
