@@ -2,4 +2,4 @@ let tempo = 120
 let ms val = val * tempo / 240000
 setcps (tempo / 60 / 4)
 
-d1 $ sound "[mykick]*2"
+d1 $ sound "[my808]*2"

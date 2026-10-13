@@ -1,0 +1,120 @@
+let ms t v = pure (toRational (v * t / 240000 :: Double))
+let hat = sound "hh"
+let ohat = sound "hh:7"
+let master = (|* gain 0.9)
+
+:{
+data Beat = Beat
+		{ bpm   :: Double
+		, swg   :: Pattern Time
+		, loose :: Pattern Double
+		, kick  :: Pattern Bool
+		, snare :: Pattern Bool
+		, ghost :: Pattern Bool
+		, hats  :: Pattern Bool
+		, ohats :: Pattern Bool
+		, bass  :: Pattern Note
+		}
+:}
+
+:{
+play b = do
+	setcps (pure (bpm b / 60 / 4))
+	d1  $ master $ (ms (bpm b) 2 ~>)
+			$ struct (kick b) (s "mykick")
+			# gain 1.18
+			# hpf 70
+			# nudge (range (negate (loose b)) (loose b) rand)
+
+	d2  $ master $ struct (snare b) (s "dasnare")
+			# lpf 6000
+			# crush 5
+			# gain 1.04
+			# nudge (range 0 (loose b * 2) rand)
+
+	d3  $ master $ swingBy (swg b) 4 $ (ms (bpm b) 20 <~)
+			$ struct (hats b) hat
+			# gain 0.9
+			# crush 5
+			# room 0.1
+			# nudge (range 0 0.03 rand)
+			# lpf 3200
+
+	d4  $ master $ (ms (bpm b) 20 <~)
+			$ struct (ohats b) ohat
+			# gain 0.9
+			# room 2
+			# lpf 4000
+			# crush 7
+
+	d5  $ master $ struct (ghost b) (s "dasnare")
+			# lpf 4000
+			# gain 0.35
+			# sustain 0.05
+			# rev 0
+			# nudge (range 0 0.02 rand)
+
+	d6  $ master $ (ms (bpm b) 2 ~>)
+			$ note (bass b)
+			# s "my808:6"
+			# crush 2
+			# gain 0.8
+:}
+
+:{
+mainB = Beat
+		{ bpm   = 98
+		, swg   = 0.5
+		, loose = 0.01
+		, kick  = "[[t ~ ~ ~] [~ ~ ~ ~] [~ ~ t ~] [~ ~ ~ ~] [t ~ ~ ~] [~ ~ ~ ~] [~ ~ t ~] [~ t ~ ~]]/2"
+		, snare = "[[~ ~ ~ ~] [t ~ ~ ~] [~ ~ ~ ~] [t ~ ~ ~]]"
+		, ghost = "~"
+		, hats  = "[[t t ~ t] [t t t t] [t t t t] [t t ~ ~]*2]/2"
+		, ohats = "[[~ ~ t ~] [~ ~ ~ ~] [~ ~ ~ ~] [~ ~ ~ ~]]/2"
+		, bass  = "~"
+		}
+:}
+
+:{
+boomB = Beat
+		{ bpm   = 98
+		, swg   = 0.5
+		, loose = 0.01
+		, kick  = "[[t ~ t ~] [~ ~ t ~] [~ ~ t ~] [~ ~ ~ ~] [t ~ t ~] [~ ~ t ~] [~ ~ t ~] [~ ~ ~ t]]/2"
+		, snare = "[[~ ~ ~ ~] [t ~ ~ ~] [~ ~ ~ ~] [t ~ ~ ~]]"
+		, ghost = "~"
+		, hats  = "[t ~ t ~] [t ~ t t] [t ~ t ~] [t ~ t ~]"
+		, ohats = "[[~ ~ ~ ~] [~ ~ ~ ~] [~ ~ ~ ~] [~ ~ ~ ~] [~ ~ ~ ~] [~ ~ ~ ~] [~ ~ ~ ~] [~ ~ t ~]]/2"
+		, bass  = "[[d3 ~ c3 ~] [~ ~ c3 ~] [~ ~ c3 ~] [~ ~ ~ ~] [c3 ~ c3 ~] [~ ~ c3 ~] [~ g2 g2 ~] [~ ~ ~ e3]]/2"
+		}
+:}
+
+:{
+dillaB = Beat
+		{ bpm   = 82
+		, swg   = 0
+		, loose = 0.02
+		, kick  = "[[t ~ ~ ~] [~ ~ ~ t] [~ ~ t ~] [~ ~ ~ ~] [t ~ ~ ~] [~ ~ ~ t] [~ ~ t ~] [~ ~ ~ t]]/2"
+		, snare = "[[~ ~ ~ ~] [t ~ ~ ~] [~ ~ ~ ~] [t ~ ~ ~]]"
+		, ghost = "~"
+		, hats  = "[[t t t t] [t t ~ t] [t t t t] [t ~ t t]]"
+		, ohats = "[[~ ~ ~ ~] [~ ~ ~ ~] [~ ~ ~ ~] [~ ~ t ~]]"
+		, bass  = "[[c3 ~ ~ ~] [~ ~ ~ ~] [~ ~ ef3 ~] [~ ~ ~ ~] [cf3 ~ ~ ~] [~ ~ ~ f3] [~ f3 ~ ~] [~ ~ ~ ~]]/2"
+		}
+:}
+
+:{
+ghostB = Beat
+		{ bpm   = 80
+		, swg   = 0.5
+		, loose = 0.01
+		, kick  = "[[t ~ ~ ~] [~ ~ t ~] [~ ~ ~ ~] [~ t ~ ~] [t ~ ~ ~] [~ ~ t ~] [~ ~ ~ ~] [~ ~ t ~]]/2"
+		, snare = "[[~ ~ ~ ~] [t ~ ~ ~] [~ ~ ~ ~] [t ~ ~ ~]]"
+		, ghost = "[[~ ~ ~ t] [~ ~ t ~] [~ t ~ ~] [~ ~ ~ t]]"
+		, hats  = "[[t t t t] [t t t t] [t t t t] [t t t t]]"
+		, ohats = "[[~ ~ ~ ~] [~ ~ ~ ~] [~ ~ ~ ~] [~ ~ t ~]]"
+		, bass  = "[[c3 ~ ~ ~] [~ ~ ~ ~] [~ ~ ~ cf3] [~ ~ ~ ~]]"
+		}
+:}
+
+play dillaB

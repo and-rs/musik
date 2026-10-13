@@ -25,6 +25,27 @@ s.reboot {
 				OffsetOut.ar(out, DirtPan.ar(sig, ~dirt.numChannels, pan, 1));
 		}).add;
 
+		SynthDef(\my808, {
+				|out, freq=65, pan=0, n=0|
+				var k = n.clip(0, 6);
+				var atk = Select.kr(k, [0.01, 0.01, 0.005, 0.002, 0.03, 0.001, 0.005]);
+				var dec = Select.kr(k, [1.5, 1.2, 1.2, 0.35, 2.5, 0.5, 1.0]);
+				var drop = Select.kr(k, [1, 1, 1.5, 2, 1, 4, 1.5]);
+				var env = EnvGen.ar(Env.perc(atk, dec, curve: -3), doneAction: 2);
+				var sine = SinOsc.ar(XLine.kr(freq * drop, freq, 0.03));
+				var click = BPF.ar(WhiteNoise.ar, 2000, 0.5) * EnvGen.ar(Env.perc(0.0005, 0.01)) * 0.3;
+				var sig = Select.ar(k, [
+						sine,
+						(sine * 3).tanh,
+						sine + (HPF.ar((sine * 4).tanh, 100) * 0.5),
+						(sine * 2).tanh,
+						(sine * 1.5).tanh,
+						(sine * 2).tanh + click,
+						LPF.ar((sine * 10).clip2(0.6), 3000)
+				]);
+				OffsetOut.ar(out, DirtPan.ar(sig * env * 0.9, ~dirt.numChannels, pan, 1));
+		}).add;
+
 		SynthDef(\mykick, {
 				|out, sustain=0.10, freq=44, pan=0, drive=1.0, click=0.18|
 				var env = EnvGen.ar(Env.perc(0.001, sustain, curve: -1), doneAction: 2);
