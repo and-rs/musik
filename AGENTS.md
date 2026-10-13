@@ -1,0 +1,1 @@
+- In `superdirt.scd`, keep SynthDefs and other definitions outside the `s.waitForBoot` block. The user evaluates blocks live, so only boot logic that needs `~dirt` belongs inside it.

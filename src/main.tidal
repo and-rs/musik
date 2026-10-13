@@ -1,7 +1,9 @@
 let ms t v = pure (toRational (v * t / 240000 :: Double))
-let hat = sound "hh"
+let master = (|* gain 1.2)
+
+let hat = sound "hh:8"
 let ohat = sound "hh:7"
-let master = (|* gain 0.9)
+let percSound = sound "hh:16"
 
 :{
 data Beat = Beat
@@ -12,8 +14,8 @@ data Beat = Beat
 		, snare :: Pattern Bool
 		, ghost :: Pattern Bool
 		, hats  :: Pattern Bool
+		, perc  :: Pattern Bool
 		, ohats :: Pattern Bool
-		, bass  :: Pattern Note
 		}
 :}
 
@@ -22,43 +24,44 @@ play b = do
 	setcps (pure (bpm b / 60 / 4))
 	d1  $ master $ (ms (bpm b) 2 ~>)
 			$ struct (kick b) (s "mykick")
-			# gain 1.18
-			# hpf 70
-			# nudge (range (negate (loose b)) (loose b) rand)
+			# orbit 0
+			# gain 1.2
+			# lpf 8000
+			# hpf 80
 
 	d2  $ master $ struct (snare b) (s "dasnare")
+			# orbit 0
 			# lpf 6000
-			# crush 5
 			# gain 1.04
 			# nudge (range 0 (loose b * 2) rand)
 
 	d3  $ master $ swingBy (swg b) 4 $ (ms (bpm b) 20 <~)
 			$ struct (hats b) hat
-			# gain 0.9
-			# crush 5
-			# room 0.1
+			# orbit 0
+			# room 0.2
 			# nudge (range 0 0.03 rand)
-			# lpf 3200
+			# lpf 4200
+			# gain 1.5
 
 	d4  $ master $ (ms (bpm b) 20 <~)
 			$ struct (ohats b) ohat
+			# orbit 0
 			# gain 0.9
 			# room 2
 			# lpf 4000
-			# crush 7
+			# crush 6
 
 	d5  $ master $ struct (ghost b) (s "dasnare")
+			# orbit 0
 			# lpf 4000
-			# gain 0.35
-			# sustain 0.05
-			# rev 0
+			# gain 0.32
 			# nudge (range 0 0.02 rand)
 
-	d6  $ master $ (ms (bpm b) 2 ~>)
-			$ note (bass b)
-			# s "my808:6"
-			# crush 2
-			# gain 0.8
+	d6  $ master $ struct (perc b) percSound
+			# orbit 0
+			# gain 0.7
+			# coarse 4
+			# att 0.1
 :}
 
 :{
@@ -70,22 +73,22 @@ mainB = Beat
 		, snare = "[[~ ~ ~ ~] [t ~ ~ ~] [~ ~ ~ ~] [t ~ ~ ~]]"
 		, ghost = "~"
 		, hats  = "[[t t ~ t] [t t t t] [t t t t] [t t ~ ~]*2]/2"
+		, perc  = "[[~ ~ t ~] [~ ~ ~ ~] [~ t ~ ~] [~ ~ ~ ~]]/2"
 		, ohats = "[[~ ~ t ~] [~ ~ ~ ~] [~ ~ ~ ~] [~ ~ ~ ~]]/2"
-		, bass  = "~"
 		}
 :}
 
 :{
 boomB = Beat
-		{ bpm   = 98
+		{ bpm   = 88
 		, swg   = 0.5
 		, loose = 0.01
 		, kick  = "[[t ~ t ~] [~ ~ t ~] [~ ~ t ~] [~ ~ ~ ~] [t ~ t ~] [~ ~ t ~] [~ ~ t ~] [~ ~ ~ t]]/2"
 		, snare = "[[~ ~ ~ ~] [t ~ ~ ~] [~ ~ ~ ~] [t ~ ~ ~]]"
 		, ghost = "~"
 		, hats  = "[t ~ t ~] [t ~ t t] [t ~ t ~] [t ~ t ~]"
+		, perc  = "[[~ ~ ~ ~] [~ ~ ~ ~] [~ ~ t ~] [~ ~ ~ t]]/2"
 		, ohats = "[[~ ~ ~ ~] [~ ~ ~ ~] [~ ~ ~ ~] [~ ~ ~ ~] [~ ~ ~ ~] [~ ~ ~ ~] [~ ~ ~ ~] [~ ~ t ~]]/2"
-		, bass  = "[[d3 ~ c3 ~] [~ ~ c3 ~] [~ ~ c3 ~] [~ ~ ~ ~] [c3 ~ c3 ~] [~ ~ c3 ~] [~ g2 g2 ~] [~ ~ ~ e3]]/2"
 		}
 :}
 
@@ -98,8 +101,8 @@ dillaB = Beat
 		, snare = "[[~ ~ ~ ~] [t ~ ~ ~] [~ ~ ~ ~] [t ~ ~ ~]]"
 		, ghost = "~"
 		, hats  = "[[t t t t] [t t ~ t] [t t t t] [t ~ t t]]"
+		, perc  = "[[~ ~ ~ t] [~ ~ ~ ~] [~ ~ ~ ~] [t ~ ~ ~]]/2"
 		, ohats = "[[~ ~ ~ ~] [~ ~ ~ ~] [~ ~ ~ ~] [~ ~ t ~]]"
-		, bass  = "[[c3 ~ ~ ~] [~ ~ ~ ~] [~ ~ ef3 ~] [~ ~ ~ ~] [cf3 ~ ~ ~] [~ ~ ~ f3] [~ f3 ~ ~] [~ ~ ~ ~]]/2"
 		}
 :}
 
@@ -112,9 +115,9 @@ ghostB = Beat
 		, snare = "[[~ ~ ~ ~] [t ~ ~ ~] [~ ~ ~ ~] [t ~ ~ ~]]"
 		, ghost = "[[~ ~ ~ t] [~ ~ t ~] [~ t ~ ~] [~ ~ ~ t]]"
 		, hats  = "[[t t t t] [t t t t] [t t t t] [t t t t]]"
+		, perc  = "[[~ ~ t ~] [~ ~ ~ ~] [~ ~ ~ t] [~ ~ ~ ~]]/2"
 		, ohats = "[[~ ~ ~ ~] [~ ~ ~ ~] [~ ~ ~ ~] [~ ~ t ~]]"
-		, bass  = "[[c3 ~ ~ ~] [~ ~ ~ ~] [~ ~ ~ cf3] [~ ~ ~ ~]]"
 		}
 :}
 
-play dillaB
+play ghostB
