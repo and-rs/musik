@@ -1,5 +1,7 @@
 let ms t v = pure (toRational (v * t / 240000 :: Double))
 let master = (|* gain 1.2)
+let tempoBpm = 98 :: Double
+let barsPerSection = 8 :: Time
 
 let hat = sound "hh:8"
 let ohat = sound "hh:7"
@@ -7,8 +9,7 @@ let percSound = sound "hh:16"
 
 :{
 data Beat = Beat
-		{ bpm   :: Double
-		, swg   :: Pattern Time
+		{ swg   :: Pattern Time
 		, loose :: Pattern Double
 		, kick  :: Pattern Bool
 		, snare :: Pattern Bool
@@ -20,7 +21,7 @@ data Beat = Beat
 :}
 
 :{
-kickPart b = master $ (ms (bpm b) 2 ~>)
+kickPart b = master $ (ms tempoBpm 2 ~>)
 		$ struct (kick b) (s "mykick")
 		# orbit 0
 		# gain 1.2
@@ -33,7 +34,7 @@ snarePart b = master $ struct (snare b) (s "dasnare")
 		# gain 1.04
 		# nudge (range 0 (loose b * 2) rand)
 
-hatPart b = master $ swingBy (swg b) 4 $ (ms (bpm b) 20 <~)
+hatPart b = master $ swingBy (swg b) 4 $ (ms tempoBpm 20 <~)
 		$ struct (hats b) hat
 		# orbit 0
 		# room 0.2
@@ -41,7 +42,7 @@ hatPart b = master $ swingBy (swg b) 4 $ (ms (bpm b) 20 <~)
 		# lpf 4200
 		# gain 1.5
 
-openHatPart b = master $ (ms (bpm b) 20 <~)
+openHatPart b = master $ (ms tempoBpm 20 <~)
 		$ struct (ohats b) ohat
 		# orbit 0
 		# gain 0.9
@@ -62,7 +63,7 @@ percPart b = master $ struct (perc b) percSound
 		# att 0.1
 
 play b = do
-	setcps (pure (bpm b / 60 / 4))
+	setcps (pure (tempoBpm / 60 / 4))
 	d1 $ kickPart b
 	d2 $ snarePart b
 	d3 $ hatPart b
@@ -73,8 +74,7 @@ play b = do
 
 :{
 mainB = Beat
-		{ bpm   = 98
-		, swg   = 0.5
+		{ swg   = 0.5
 		, loose = 0.01
 		, kick  = "[[t ~ ~ ~] [~ ~ ~ ~] [~ ~ t ~] [~ ~ ~ ~] [t ~ ~ ~] [~ ~ ~ ~] [~ ~ t ~] [~ t ~ ~]]/2"
 		, snare = "[[~ ~ ~ ~] [t ~ ~ ~] [~ ~ ~ ~] [t ~ ~ ~]]"
@@ -87,8 +87,7 @@ mainB = Beat
 
 :{
 boomB = Beat
-		{ bpm   = 88
-		, swg   = 0.5
+		{ swg   = 0.5
 		, loose = 0.01
 		, kick  = "[[t ~ t ~] [~ ~ t ~] [~ ~ t ~] [~ ~ ~ ~] [t ~ t ~] [~ ~ t ~] [~ ~ t ~] [~ ~ ~ t]]/2"
 		, snare = "[[~ ~ ~ ~] [t ~ ~ ~] [~ ~ ~ ~] [t ~ ~ ~]]"
@@ -101,8 +100,7 @@ boomB = Beat
 
 :{
 dillaB = Beat
-		{ bpm   = 82
-		, swg   = 0
+		{ swg   = 0
 		, loose = 0.02
 		, kick  = "[[t ~ ~ ~] [~ ~ ~ t] [~ ~ t ~] [~ ~ ~ ~] [t ~ ~ ~] [~ ~ ~ t] [~ ~ t ~] [~ ~ ~ t]]/2"
 		, snare = "[[~ ~ ~ ~] [t ~ ~ ~] [~ ~ ~ ~] [t ~ ~ ~]]"
@@ -115,8 +113,7 @@ dillaB = Beat
 
 :{
 ghostB = Beat
-		{ bpm   = 80
-		, swg   = 0.5
+		{ swg   = 0.5
 		, loose = 0.01
 		, kick  = "[[t ~ ~ ~] [~ ~ t ~] [~ ~ ~ ~] [~ t ~ ~] [t ~ ~ ~] [~ ~ t ~] [~ ~ ~ ~] [~ ~ t ~]]/2"
 		, snare = "[[~ ~ ~ ~] [t ~ ~ ~] [~ ~ ~ ~] [t ~ ~ ~]]"
@@ -128,17 +125,12 @@ ghostB = Beat
 :}
 
 :{
-sections p = seqP [
-	(0, 8, p mainB),
-	(8, 16, p boomB),
-	(16, 24, p dillaB),
-	(24, 32, p ghostB)
-]
+sections p = seqP [(0, barsPerSection, p mainB), (barsPerSection, barsPerSection * 2, p boomB), (barsPerSection * 2, barsPerSection * 3, p dillaB), (barsPerSection * 3, barsPerSection * 4, p ghostB)]
 
 arrange = do
 	hush
 	resetCycles
-	setcps $ sections (\b -> pure (bpm b / 60 / 4))
+	setcps (pure (tempoBpm / 60 / 4))
 	d1 $ sections kickPart
 	d2 $ sections snarePart
 	d3 $ sections hatPart

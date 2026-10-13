@@ -1,5 +1,8 @@
 (
 s.reboot {
+		var renderPath = "RENDER_PATH".getenv;
+		var renderSeconds = "RENDER_SECONDS".getenv;
+
 		s.options.numBuffers = 1024 * 256;
 		s.options.memSize = 8192 * 32; // 256 MB
 		s.options.numWireBufs = 2048;
@@ -11,6 +14,7 @@ s.reboot {
 				s.sync;
 				~dirt = SuperDirt(2, s);
 				~dirt.loadSoundFiles;
+				s.sync;
 				~dirt.start(57120, 0 ! 12);
 				~dirt.orbits[0].globalEffects = ~dirt.orbits[0].globalEffects.insert(
 						~dirt.orbits[0].globalEffects.size - 1,
@@ -18,6 +22,16 @@ s.reboot {
 				);
 				~dirt.orbits[0].initNodeTree;
 				~dirt.orbits[0].set(\glue, 1);
+				if (renderPath.notNil and: { renderSeconds.notNil }) {
+					s.record(renderPath, duration: renderSeconds.asFloat);
+					"RENDER_READY".postln;
+					Routine {
+						(renderSeconds.asFloat + 1).wait;
+						s.quit;
+						1.wait;
+						0.exit;
+					}.play;
+				};
 		};
 
 		SynthDef("glue2", {
