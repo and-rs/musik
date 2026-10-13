@@ -16,12 +16,6 @@ s.reboot {
 				~dirt.loadSoundFiles;
 				s.sync;
 				~dirt.start(57120, 0 ! 12);
-				~dirt.orbits[0].globalEffects = ~dirt.orbits[0].globalEffects.insert(
-						~dirt.orbits[0].globalEffects.size - 1,
-						GlobalDirtEffect(\glue, [\glue]).alwaysRun_(true)
-				);
-				~dirt.orbits[0].initNodeTree;
-				~dirt.orbits[0].set(\glue, 1);
 				if (renderPath.notNil and: { renderSeconds.notNil }) {
 					s.record(renderPath, duration: renderSeconds.asFloat);
 					"RENDER_READY".postln;
@@ -33,25 +27,6 @@ s.reboot {
 					}.play;
 				};
 		};
-
-		SynthDef("glue2", {
-				|dryBus, gate=1, glue=0, pauseImmediately=0, dirt_resumed=0|
-				var amt = glue.clip(0, 1);
-				var sig = In.ar(dryBus, 2);
-				var link = (sig[0] + sig[1]) * 0.5 ! 2;
-				var threshold = 0.5 - (amt * 0.3);
-				var slopeAbove = 1 / (1 + (amt * 8));
-				var attack = 0.11;
-				var release = 0.22;
-				var makeupGain = 1 + (amt * 2);
-				var saturationDrive = 2.0;
-				var limiterLevel = 0.2;
-				var limiterDur = 0.01;
-				var comp = Compander.ar(sig, link, threshold, 1, slopeAbove, attack, release);
-				var wet = Limiter.ar((comp * makeupGain * saturationDrive).tanh, limiterLevel, limiterDur);
-				var out = XFade2.ar(sig, wet, (amt * 2) - 1);
-				ReplaceOut.ar(dryBus, out * EnvGen.kr(Env.asr(0, 1, 0.2), gate, doneAction: 2));
-		}).add;
 
 		SynthDef(\dasnare, {
 				|out, sustain=0.2, freq=420, pan=0, drive=1.5, noise=0.8, rev=0.8|
@@ -87,12 +62,18 @@ s.reboot {
 		}).add;
 
 		SynthDef(\mykick, {
-				|out, sustain=0.24, freq=44, pan=0, drive=1.0, click=0.4|
-				var env = EnvGen.ar(Env.perc(0.001, sustain, curve: -4), doneAction: 2);
-				var body = SinOsc.ar(XLine.kr(freq * 8, freq, 0.02)) * env;
-				var transient = HPF.ar(WhiteNoise.ar, 3000) * EnvGen.ar(Env.perc(0.0005, 0.012)) * click;
-				var sig = ((body + transient) * drive).tanh * 0.9;
-				OffsetOut.ar(out, DirtPan.ar(sig, ~dirt.numChannels, pan, 1));
+			|out, freq=50, sustain=0.2, pan=0|
+			var env = EnvGen.ar(Env.perc(0.001, sustain), doneAction: 2);
+			var body = SinOsc.ar(XLine.kr(freq * 4, freq, 0.03)) * env;
+			OffsetOut.ar(out, DirtPan.ar(body, ~dirt.numChannels, pan, 1));
+		}).add;
+
+		SynthDef(\soft, {
+			|out, freq=220, sustain=0.25, pan=0|
+			var env = EnvGen.ar(Env.perc(0.01, sustain, curve: -4), doneAction: 2);
+			var tone = (SinOsc.ar(freq) * 0.8) + (LFTri.ar(freq) * 0.3);
+			var sig = LPF.ar(tone, 1800) * env * 0.5;
+			OffsetOut.ar(out, DirtPan.ar(sig, ~dirt.numChannels, pan, 1));
 		}).add;
 
 };

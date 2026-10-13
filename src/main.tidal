@@ -1,11 +1,11 @@
-let ms t v = pure (toRational (v * t / 240000 :: Double))
-let master = (|* gain 1.2)
-let tempoBpm = 98 :: Double
+let ms t v = pure jtoRational (v * t / 240000 :: Double))
+let master = (|* gain 0.6)
+let tempoBpm = 88 :: Double
 let barsPerSection = 8 :: Time
 
 let hat = sound "hh:8"
 let ohat = sound "hh:7"
-let percSound = sound "hh:16"
+let percSound = sound "hh:18"
 
 :{
 data Beat = Beat
@@ -23,44 +23,42 @@ data Beat = Beat
 :{
 kickPart b = master $ (ms tempoBpm 2 ~>)
 		$ struct (kick b) (s "mykick")
-		# orbit 0
-		# gain 1.2
-		# lpf 8000
-		# hpf 80
+		# gain 1.3
 
 snarePart b = master $ struct (snare b) (s "dasnare")
-		# orbit 0
 		# lpf 6000
-		# gain 1.04
+		# gain 1.2
 		# nudge (range 0 (loose b * 2) rand)
+		# release 0.15
 
 hatPart b = master $ swingBy (swg b) 4 $ (ms tempoBpm 20 <~)
 		$ struct (hats b) hat
-		# orbit 0
-		# room 0.2
 		# nudge (range 0 0.03 rand)
 		# lpf 4200
-		# gain 1.5
+		# coarse 3
+		# gain 1.2
 
 openHatPart b = master $ (ms tempoBpm 20 <~)
 		$ struct (ohats b) ohat
-		# orbit 0
-		# gain 0.9
-		# room 2
 		# lpf 4000
-		# crush 6
+		# gain 0.9
 
 ghostPart b = master $ struct (ghost b) (s "dasnare")
-		# orbit 0
 		# lpf 4000
 		# gain 0.32
 		# nudge (range 0 0.02 rand)
 
 percPart b = master $ struct (perc b) percSound
-		# orbit 0
-		# gain 0.7
-		# coarse 4
-		# att 0.1
+		# gain 0.8
+
+melodyPart _ = master $ (n (scale "dorian" "[0 ~ 1 3] [3 ~ ~ 3]") |- n 15)
+		# s "soft"
+		# sustain 0.3
+		# gain 1.3
+		# dry 2
+		# room 0.05
+		# size 0.001
+		# lpf 3000
 
 play b = do
 	setcps (pure (tempoBpm / 60 / 4))
@@ -70,6 +68,7 @@ play b = do
 	d4 $ openHatPart b
 	d5 $ ghostPart b
 	d6 $ percPart b
+	d7 $ melodyPart b
 :}
 
 :{
@@ -137,6 +136,7 @@ arrange = do
 	d4 $ sections openHatPart
 	d5 $ sections ghostPart
 	d6 $ sections percPart
+	d7 $ sections melodyPart
 :}
 
 arrange
