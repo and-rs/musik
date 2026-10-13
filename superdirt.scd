@@ -25,19 +25,14 @@ s.reboot {
 				var amt = glue.clip(0, 1);
 				var sig = In.ar(dryBus, 2);
 				var link = (sig[0] + sig[1]) * 0.5 ! 2;
-
-				// TWEAK: compressor. At full glue: threshold 0.20, slopeAbove 1/6 (~6:1).
-				var threshold = 0.5 - (amt * 0.3); // Lower baseline / raise 0.3 for more compression.
-				var slopeAbove = 1 / (1 + (amt * 8)); // Raise 5 for a stronger ratio at full glue.
-				var attack = 0.01; // Seconds; higher is slower.
-				var release = 0.22; // Seconds; higher lets compression recover more slowly.
-
-				// TWEAK: output level and color.
-				var makeupGain = 1 + (amt * 2); // 1x to 3x; raise 2 for more level into saturation.
-				var saturationDrive = 2.0; // Raise for more saturation before tanh.
-				var limiterLevel = 0.9; // Peak ceiling.
-				var limiterDur = 0.01; // Limiter lookahead, in seconds.
-
+				var threshold = 0.5 - (amt * 0.3);
+				var slopeAbove = 1 / (1 + (amt * 8));
+				var attack = 0.11;
+				var release = 0.22;
+				var makeupGain = 1 + (amt * 2);
+				var saturationDrive = 2.0;
+				var limiterLevel = 0.2;
+				var limiterDur = 0.01;
 				var comp = Compander.ar(sig, link, threshold, 1, slopeAbove, attack, release);
 				var wet = Limiter.ar((comp * makeupGain * saturationDrive).tanh, limiterLevel, limiterDur);
 				var out = XFade2.ar(sig, wet, (amt * 2) - 1);

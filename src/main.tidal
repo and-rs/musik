@@ -20,48 +20,55 @@ data Beat = Beat
 :}
 
 :{
+kickPart b = master $ (ms (bpm b) 2 ~>)
+		$ struct (kick b) (s "mykick")
+		# orbit 0
+		# gain 1.2
+		# lpf 8000
+		# hpf 80
+
+snarePart b = master $ struct (snare b) (s "dasnare")
+		# orbit 0
+		# lpf 6000
+		# gain 1.04
+		# nudge (range 0 (loose b * 2) rand)
+
+hatPart b = master $ swingBy (swg b) 4 $ (ms (bpm b) 20 <~)
+		$ struct (hats b) hat
+		# orbit 0
+		# room 0.2
+		# nudge (range 0 0.03 rand)
+		# lpf 4200
+		# gain 1.5
+
+openHatPart b = master $ (ms (bpm b) 20 <~)
+		$ struct (ohats b) ohat
+		# orbit 0
+		# gain 0.9
+		# room 2
+		# lpf 4000
+		# crush 6
+
+ghostPart b = master $ struct (ghost b) (s "dasnare")
+		# orbit 0
+		# lpf 4000
+		# gain 0.32
+		# nudge (range 0 0.02 rand)
+
+percPart b = master $ struct (perc b) percSound
+		# orbit 0
+		# gain 0.7
+		# coarse 4
+		# att 0.1
+
 play b = do
 	setcps (pure (bpm b / 60 / 4))
-	d1  $ master $ (ms (bpm b) 2 ~>)
-			$ struct (kick b) (s "mykick")
-			# orbit 0
-			# gain 1.2
-			# lpf 8000
-			# hpf 80
-
-	d2  $ master $ struct (snare b) (s "dasnare")
-			# orbit 0
-			# lpf 6000
-			# gain 1.04
-			# nudge (range 0 (loose b * 2) rand)
-
-	d3  $ master $ swingBy (swg b) 4 $ (ms (bpm b) 20 <~)
-			$ struct (hats b) hat
-			# orbit 0
-			# room 0.2
-			# nudge (range 0 0.03 rand)
-			# lpf 4200
-			# gain 1.5
-
-	d4  $ master $ (ms (bpm b) 20 <~)
-			$ struct (ohats b) ohat
-			# orbit 0
-			# gain 0.9
-			# room 2
-			# lpf 4000
-			# crush 6
-
-	d5  $ master $ struct (ghost b) (s "dasnare")
-			# orbit 0
-			# lpf 4000
-			# gain 0.32
-			# nudge (range 0 0.02 rand)
-
-	d6  $ master $ struct (perc b) percSound
-			# orbit 0
-			# gain 0.7
-			# coarse 4
-			# att 0.1
+	d1 $ kickPart b
+	d2 $ snarePart b
+	d3 $ hatPart b
+	d4 $ openHatPart b
+	d5 $ ghostPart b
+	d6 $ percPart b
 :}
 
 :{
@@ -120,4 +127,24 @@ ghostB = Beat
 		}
 :}
 
-play ghostB
+:{
+sections p = seqP [
+	(0, 8, p mainB),
+	(8, 16, p boomB),
+	(16, 24, p dillaB),
+	(24, 32, p ghostB)
+]
+
+arrange = do
+	hush
+	resetCycles
+	setcps $ sections (\b -> pure (bpm b / 60 / 4))
+	d1 $ sections kickPart
+	d2 $ sections snarePart
+	d3 $ sections hatPart
+	d4 $ sections openHatPart
+	d5 $ sections ghostPart
+	d6 $ sections percPart
+:}
+
+arrange
