@@ -1,5 +1,5 @@
-let ms t v = pure jtoRational (v * t / 240000 :: Double))
-let master = (|* gain 0.6)
+let ms t v = pure (toRational (v * t / 240000 :: Double))
+let master = (|* gain 1)
 let tempoBpm = 88 :: Double
 let barsPerSection = 8 :: Time
 
@@ -51,7 +51,7 @@ ghostPart b = master $ struct (ghost b) (s "dasnare")
 percPart b = master $ struct (perc b) percSound
 		# gain 0.8
 
-melodyPart _ = master $ (n (scale "dorian" "[0 ~ 1 3] [3 ~ ~ 3]") |- n 15)
+melodyPart _ = master $ (n (scale "minor" "[0 ~ 1 3] [3 ~ ~ 3]") |- n 15)
 		# s "soft"
 		# sustain 0.3
 		# gain 1.3
@@ -59,16 +59,6 @@ melodyPart _ = master $ (n (scale "dorian" "[0 ~ 1 3] [3 ~ ~ 3]") |- n 15)
 		# room 0.05
 		# size 0.001
 		# lpf 3000
-
-play b = do
-	setcps (pure (tempoBpm / 60 / 4))
-	d1 $ kickPart b
-	d2 $ snarePart b
-	d3 $ hatPart b
-	d4 $ openHatPart b
-	d5 $ ghostPart b
-	d6 $ percPart b
-	d7 $ melodyPart b
 :}
 
 :{
